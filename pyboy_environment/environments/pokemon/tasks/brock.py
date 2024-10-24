@@ -103,6 +103,8 @@ class PokemonBrock(PokemonEnvironment):
 
     def _movement_reward(self, new_state: dict[str, any]) -> int:
         reward = 0
+        if self._read_m(0xD057):
+            return reward
 
         if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]):
             #new coordinate unlocked
@@ -129,22 +131,23 @@ class PokemonBrock(PokemonEnvironment):
             self.no_move += 1
             reward -= 1
 
-        if new_state["location"]["map"] == "PALLET_TOWN," and ("ROUTE_1" not in self.prev_loc):
-            if (new_state["location"]["y"]) < (self.prior_game_stats["location"]["y"]): #to attempt to go up
-                reward += 4 #<-Change
-                #print("Heading entrance of ROUTE_1")
-            elif (new_state["location"]["y"]) > (self.prior_game_stats["location"]["y"]):
-                reward -= 2
-                #print("Away from entrance of ROUTE_1")
-            elif 0 <= (new_state["location"]["y"]) < 3 and  (9 <new_state["location"]["y"] < 13):
-                reward += 4.5
+        # if new_state["location"]["map"] == "PALLET_TOWN," and ("ROUTE_1" not in self.prev_loc):
+        #     if (new_state["location"]["y"]) < (self.prior_game_stats["location"]["y"]): #to attempt to go up
+        #         reward += 4 #<-Change
+        #         #print("Heading entrance of ROUTE_1")
+        #     elif (new_state["location"]["y"]) > (self.prior_game_stats["location"]["y"]):
+        #         reward -= 2
+        #         #print("Away from entrance of ROUTE_1")
+        #     elif 0 <= (new_state["location"]["y"]) < 3 and  (9 <new_state["location"]["y"] < 13):
+        #         reward += 4.5
             #print("Near entrance of ROUTE_1")
 
         return reward                  
     
     def _location_reward(self, new_state: dict[str, any]) -> float :
         reward = 0
-
+        if self._read_m(0xD057):
+            return reward
         #New area 
         if new_state["location"]["map"] not in self.prev_loc:
             self.prev_loc.add(new_state["location"]["map"])
@@ -190,110 +193,54 @@ class PokemonBrock(PokemonEnvironment):
             for i in hp_list["current"]:
                 party_hp = party_hp + i
 
-            if ((enemy_max_hp/2) < enemy_curr_hp < (enemy_max_hp)) and turn_num > 0:
-                reward = 4
-                #print("Has dealt damage")
-                self.prev_turn = turn_num
-                self.prev_item_sel = battle_button
-                self.prev_menu = battle_left_right
-            elif (0 < enemy_curr_hp < (enemy_max_hp/2)) and turn_num > 0:
-                reward = 5
-                #print("Damaged below half")
-                self.prev_turn = turn_num
-                self.prev_item_sel = battle_button
-                self.prev_menu = battle_left_right
-            elif turn_num == self.prev_turn:
-                if  (0.4 * battle_hp_max) < battle_hp <= battle_hp_max:
+            #Select 4 is ideal
+            if self.button_pressed == 4:
+                reward += 2
+            
+            # if battle_left_right == 3 and self.button_pressed == 3:
+            #     reward += 3
+            
+            if self.prev_turn == turn_num:
+                reward -= 1
+
+            #If in move selection menu
+            if battle_left_right == 199: #in move selection
+                reward += 5
+                enemy_hp_diff = enemy_max_hp - enemy_curr_hp 
+                if enemy_hp_diff == 0:
+                    reward += 20
+                   
+                elif enemy_hp_diff > 0:
+                    reward += 1.5 * (enemy_max_hp - enemy_curr_hp)
                     
-                    # Need to add in item selection later on
-
-                    #Hovering over fight button if since the prev turn no fighting button was pressed
-                    if ((battle_left_right == 17 and battle_button == 1) or battle_left_right == 33) and ((self.prev_menu == 17 and self.prev_item_sel == 1) or self.prev_menu == 33):
-
-                        if self.button_pressed == 4:
-                            reward = -1
-                            self.prev_turn = turn_num
-                            self.prev_item_sel = battle_button
-                            self.prev_menu = battle_left_right
-                        else:
-                            reward = 2
-                            self.prev_turn = turn_num
-                            self.prev_item_sel = battle_button
-                            self.prev_menu = battle_left_right
+                elif enemy_hp_diff < 0: #enemy recovered hp
+                    reward = 0
                     
-                    #from after selecting FIGHT button
-                    elif battle_left_right == 199 and (self.prev_menu == 17 and self.prev_item_sel == 0):
-                        if self.button_pressed == 4:
-                            reward = 3
-                            self.prev_turn = turn_num
-                            self.prev_item_sel = battle_button
-                            self.prev_menu = battle_left_right
-                        else:
-                            reward = 2
-                            self.prev_turn = turn_num
-                            self.prev_item_sel = battle_button
-                            self.prev_menu = battle_left_right
-                    #other buttons
-                    else:
-                        reward -=1 
-                        self.prev_turn = turn_num
-                        self.prev_item_sel = battle_button
-                        self.prev_menu = battle_left_right
-                        self.no_attack += 1
-#==========================================================================                   Need to add condition for when enemy hp recovers. ==============================================================
-                #When pokemon is below 40% hp
-                elif 0 < battle_hp <= (0.4 * battle_hp_max):
-                    #If there is only one pokemon in party
-                    if battle_hp_max == party_hp:
-                        #Making it run at lower HP
-                        if battle_left_right == 33 and battle_button == 1 and self.button_pressed == 4:
-                            if self.button_pressed == 4:
-                                reward = 2
-                                self.prev_turn = turn_num
-                                self.prev_item_sel = battle_button
-                                self.prev_menu = battle_left_right
-                            else:
-                                reward = 1
-                                self.prev_turn = turn_num
-                                self.prev_item_sel = battle_button
-                                self.prev_menu = battle_left_right
-
-                        else:
-                            reward = -1
-                            self.prev_turn = turn_num   
-                            self.prev_item_sel = battle_button
-                            self.prev_menu = battle_left_right                 
                 else:
-                #print("stuck in same turn")
-                    reward = -1
-                    self.prev_turn = turn_num
-            else:
-                #The very first turn. 
-                #Fight button isn't pressed
-                if ((battle_left_right == 17 and battle_button == 1) or battle_left_right == 33):
-
-                    if self.button_pressed == 4:
-                        reward = -1
-                        self.prev_turn = turn_num
-                        self.prev_item_sel = battle_button
-                        self.prev_menu = battle_left_right
-                    else:
-                        reward = 2
-                        self.prev_turn = turn_num
-                        self.prev_item_sel = battle_button
-                        self.prev_menu = battle_left_right
-                else:
-                    #only Fight button has been pressed
-                    reward = 1
-                    self.prev_turn = turn_num
-                    self.prev_item_sel = battle_button
-                    self.prev_menu = battle_left_right
+                    
+                    reward = 0
+            
+            #Pokemon selection
+            if battle_left_right == 3:
+                # #meaning only one pokemon in party
+                # if battle_hp == party_hp:
+                #     reward -= 1
+                # elif ((battle_hp_max - battle_hp) <= battle_hp_max/2):
+                #     reward += 2
+                if self.button_pressed == 5:
+                    reward +=2
+            
+            #Item selection
+            if battle_left_right == 7:
+                if self.button_pressed == 5:
+                    reward +=2
+                    
+            self.prev_turn = turn_num
 
 
-                reward = 0
         else:
-            #print("Not in batte")
-            reward = 0
+
+            reward = 0       
 
         return reward
 
