@@ -58,6 +58,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
+        self.prev_button_pressed = 0
         self.no_attack = 0
 
     def reset(self) -> np.ndarray:
@@ -79,6 +80,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
+        self.prev_button_pressed = 0
         self.no_attack = 0
 
         return self._get_state()
@@ -122,7 +124,7 @@ class PokemonBrock(PokemonEnvironment):
                 if new_state["location"]["map"] == "OAKS_LAB,":
                     reward -= 1
 
-            if self._grass_reward(new_state) :
+            if self._grass_reward(new_state) and self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN," :
                 reward += 1
             reward += 1
             #print("Has moved reward")
@@ -194,8 +196,9 @@ class PokemonBrock(PokemonEnvironment):
                 party_hp = party_hp + i
 
             #Select 4 is ideal
-            if self.button_pressed == 4:
-                reward += 2
+            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199]:
+                print("Button ahs been pressed")
+                reward += 5
             
             # if battle_left_right == 3 and self.button_pressed == 3:
             #     reward += 3
@@ -207,17 +210,25 @@ class PokemonBrock(PokemonEnvironment):
             if battle_left_right == 199: #in move selection
                 reward += 5
                 enemy_hp_diff = enemy_max_hp - enemy_curr_hp 
+                #Will either be here or at line 217
+                if self.button_pressed == 4:
+                    print("Button again ahs been pressed")
+                    reward += 5
+                
                 if enemy_hp_diff == 0:
                     reward += 20
-                   
+                    
                 elif enemy_hp_diff > 0:
+                    #To incentise it to actually attack if hovering over one of the moves for too long
+                    # if self.button_pressed == 4:
+                    #     reward += 2
                     reward += 1.5 * (enemy_max_hp - enemy_curr_hp)
                     
                 elif enemy_hp_diff < 0: #enemy recovered hp
                     reward = 0
                     
                 else:
-                    
+                    self.no_attack += 1
                     reward = 0
             
             #Pokemon selection
@@ -228,12 +239,16 @@ class PokemonBrock(PokemonEnvironment):
                 # elif ((battle_hp_max - battle_hp) <= battle_hp_max/2):
                 #     reward += 2
                 if self.button_pressed == 5:
-                    reward +=2
+                    reward +=4
+                else:
+                    self.no_attack += 1
             
             #Item selection
             if battle_left_right == 7:
                 if self.button_pressed == 5:
-                    reward +=2
+                    reward +=4
+                else:
+                    self.no_attack += 1
                     
             self.prev_turn = turn_num
 
@@ -260,12 +275,16 @@ class PokemonBrock(PokemonEnvironment):
         curr_hp = np.array([curr_hp])
         enemy_curr_hp = np.array([self._read_hp(0xCFE6)])
         num_caught = np.array([game_stats["caught_pokemon"]])
+        battle_left_right = np.array([self._read_m(0xCC29)]) #battle menu cursor on left or right
+        battle_button = np.array([self._read_m(0xCC26)])
 
         state = np.concatenate([x, y, 
                                 location,
                                 curr_hp,
                                 enemy_curr_hp,
-                                num_caught]).flatten()
+                                num_caught,
+                                battle_button,
+                                battle_left_right]).flatten()
    
         return state#, np.array(self.pyboy.game_area())]#state  #[game_stats["location"]["map_id"], game_stats["seen_pokemon"], game_stats["caught_pokemon"]]
 
@@ -301,8 +320,8 @@ class PokemonBrock(PokemonEnvironment):
             return 1
         elif self.no_move >= 250:
             return 1
-        elif self.no_attack >= 125:
-            return 1
+        # elif self.no_attack >= 125:
+        #     return 1
         else:
             return 0
         
