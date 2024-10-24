@@ -213,7 +213,7 @@ class PokemonBrock(PokemonEnvironment):
                 #Will either be here or at line 217
                 if self.button_pressed == 4:
                     print("Button again ahs been pressed")
-                    reward += 5
+                    reward += 21
                 
                 if enemy_hp_diff == 0:
                     reward += 20
