@@ -320,8 +320,8 @@ class PokemonBrock(PokemonEnvironment):
             return 1
         elif self.no_move >= 250:
             return 1
-        # elif self.no_attack >= 125:
-        #     return 1
+        elif self.no_attack >= 125:
+            return 1
         else:
             return 0
         
