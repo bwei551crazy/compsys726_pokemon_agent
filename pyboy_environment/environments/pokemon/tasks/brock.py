@@ -239,22 +239,24 @@ class PokemonBrock(PokemonEnvironment):
                         print("Item has been pressed")
                         reward += 15
                         
-            elif battle_left_right == 199 and self.button_pressed == 4:
+            elif battle_left_right == 199 and self.button_pressed == 4 :
                 print("entered move selection")
-                reward += 8
+                reward += 5
                 if battle_button == 0:
                     print("Tackle has been pressed")
                     enemy_hp_df = enemy_max_hp - enemy_curr_hp
-                    reward += 10 + 1.5*(enemy_hp_df)
+                    reward += 12
+                    # if (turn_num != self.prev_turn):
+                    #     reward += 1.5*(enemy_hp_df)
                     self.no_attack = 0
                 elif battle_button == 1:
-                    reward += 5
+                    reward += 10
                 else:
                     self.no_attack += 1
 
             if turn_num != self.prev_turn:
                 print("Move has been made Turn")
-                reward +=10
+                reward +=30 + 1.5*(enemy_hp_df)
             self.prev_turn = turn_num
 
         else:
@@ -324,7 +326,7 @@ class PokemonBrock(PokemonEnvironment):
             return 1
         elif self.no_move >= 250:
             return 1
-        elif self.no_attack >= 100:
+        elif self.no_attack >= 150:
             return 1
         elif self._read_hp(0xD015) == 0:
             return 1
