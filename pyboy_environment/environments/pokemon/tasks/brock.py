@@ -38,7 +38,7 @@ class PokemonBrock(PokemonEnvironment):
         ]
 
         super().__init__(
-            act_freq= 100, #act_freq,
+            act_freq= 50, #act_freq, original is 24
             task="brock",
             init_name="has_pokedex.state",
             emulation_speed=emulation_speed,
