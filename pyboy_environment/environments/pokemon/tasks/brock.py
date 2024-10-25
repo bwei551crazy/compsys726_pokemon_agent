@@ -238,7 +238,7 @@ class PokemonBrock(PokemonEnvironment):
                 
             
             #Pokemon selection
-            if battle_left_right == 3:
+            elif battle_left_right == 3:
                 # #meaning only one pokemon in party
                 # if battle_hp == party_hp:
                 #     reward -= 1
@@ -252,7 +252,7 @@ class PokemonBrock(PokemonEnvironment):
       
             
             #Item selection
-            if battle_left_right == 7:
+            elif battle_left_right == 7:
                 if self.button_pressed == 5 and self.prev_menu == 7:
                     reward +=4
                 else:
