@@ -54,7 +54,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_loc = set()
         self.prev_spot = set()
         self.no_move = 0
-        self.prev_enemy_hp = 0
+        self.prev_enemy_hp = -1
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
@@ -76,7 +76,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_loc = set()
         self.prev_spot = set()
         self.no_move = 0
-        self.prev_enemy_hp = 0
+        self.prev_enemy_hp = -1
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
