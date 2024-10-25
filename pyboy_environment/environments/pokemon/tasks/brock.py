@@ -54,7 +54,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_loc = set()
         self.prev_spot = set()
         self.no_move = 0
-        self.prev_enemy_hp = -1
+        self.prev_enemy_hp = 0
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
@@ -76,7 +76,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_loc = set()
         self.prev_spot = set()
         self.no_move = 0
-        self.prev_enemy_hp = -1
+        self.prev_enemy_hp = 0
         self.prev_menu = 0
         self.prev_item_sel = 0
         self.button_pressed = 0
@@ -102,6 +102,29 @@ class PokemonBrock(PokemonEnvironment):
 
         # Release the button
         self.pyboy.send_input(self.release_button[button])
+
+    def _read_items(self) -> dict:
+        total_items = self._read_m(0xD31D)
+        if total_items == 0:
+            return {}
+        
+        addr = 0xD31E #Start of item list
+        item = {}
+
+        for i in range(total_items):
+            item_id = self._read_m(addr + 2 * 1)
+            item_count = self._read_m(addr+ 2*1 + 1)
+            item[item_id] = item_count
+        
+        return item
+    
+    def _get_pokeball_count(self, items) -> int:
+        total_count = 0
+        for item_id, count in items.items():
+            if item_id in range(0x0, 0x5):
+                total_count += count
+        
+        return total_count
 
     def _movement_reward(self, new_state: dict[str, any]) -> int:
         reward = 0
@@ -200,78 +223,35 @@ class PokemonBrock(PokemonEnvironment):
             for i in hp_list["current"]:
                 party_hp = party_hp + i
 
-            #Select 4 is ideal if FIGHT, POKEMON, ITEM and RUN are not selected. And the prev menu wasn't in battle. 
-            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199] and self.prev_menu not in [17,33]:
-                print(f"Battle_left_right: {battle_left_right}")
-                print("Button ahs been pressed")
-                reward += 5
-            
-            # if battle_left_right == 3 and self.button_pressed == 3:
-            #     reward += 3
-            
-            if self.prev_turn == turn_num:
-                reward -= 10
-
-            #If in move selection menu
-            if battle_left_right == 199: #in move selection
-                reward += 2
-                enemy_hp_diff = enemy_max_hp - enemy_curr_hp 
-                #Will either be here or at line 217
-                if self.button_pressed == 4 and (self.prev_menu in [17, 199, 33]) and self.prev_button_pressed == 4:
-                    print("Button again ahs been pressed")
-                    print(f"Battle_left_right: {battle_left_right}")
+            #Ensure that its either 33 or 17:
+            if battle_left_right in [17, 33]:
+                print("In fight")
+                reward += 10
+                pokeball_count = self._get_pokeball_count(self._read_items())
+                if pokeball_count == 0:
+                    if battle_left_right == 17 and battle_button == 0:
+                        print("Fight button has been pressed")
+                        reward += 10
+                        self.no_attack = 0
+                else:
+                    if battle_left_right == 17 and battle_button == 1:
+                        print("Item has been pressed")
+                        reward += 15
+                        self.no_attack = 0
+            elif battle_left_right == 199:
+                print("entered move selection")
+                reward += 20
+                if battle_button == 0:
+                    print("Tackle has been pressed")
+                    enemy_hp_df = enemy_max_hp - enemy_curr_hp
+                    reward += 1 + 1.5*(enemy_hp_df)
                     self.no_attack = 0
-                    self.prev_button_pressed = self.button_pressed
-                    reward += 15
-                
-                if enemy_hp_diff == 0 and (enemy_hp_diff != self.prev_enemy_hp):
-                    #Should be -1 b4 the switch
-                    print(f"Full HP prev update: {self.prev_enemy_hp}")
-                    reward += 20
-                    self.prev_enemy_hp = enemy_hp_diff
-                    
-                elif enemy_hp_diff > 0 and (enemy_hp_diff != self.prev_enemy_hp):
-                    #Prev hp diff should be 0 at this point if coming from the condition above and it actually dealt damage
-                    print(f"Full HP prev update: {self.prev_enemy_hp}")
-                    #To incentise it to actually attack if hovering over one of the moves for too long
-                    # if self.button_pressed == 4:
-                    #     reward += 2
-                    reward += 1.5 * (enemy_max_hp - enemy_curr_hp)
-                    self.prev_enemy_hp = enemy_hp_diff
-                    
-                elif enemy_hp_diff < 0: #enemy recovered hp
-                    reward = 0
-                    
-                else:
-                    self.no_attack += 1
-                    reward = 0
-                
             
-            #Pokemon selection
-            elif battle_left_right == 3:
-                # #meaning only one pokemon in party
-                # if battle_hp == party_hp:
-                #     reward -= 1
-                # elif ((battle_hp_max - battle_hp) <= battle_hp_max/2):
-                #     reward += 2
-                if self.button_pressed == 5 and self.prev_menu == 3:
-                    reward +=4
-                else:
-                    self.no_attack += 1
-
-      
-            
-            #Item selection
-            elif battle_left_right == 7:
-                if self.button_pressed == 5 and self.prev_menu == 7:
-                    reward +=4
-                else:
-                    self.no_attack += 1
-
-                    
+            if turn_num == self.prev_turn:
+                print("Same Turn")
+                reward -= 1
+                self.no_attack+=1
             self.prev_turn = turn_num
-            self.prev_menu = battle_left_right
-
 
         else:
 
