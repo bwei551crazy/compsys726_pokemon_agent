@@ -204,7 +204,7 @@ class PokemonBrock(PokemonEnvironment):
             #     reward += 3
             
             if self.prev_turn == turn_num:
-                reward -= 1
+                reward -= 10
 
             #If in move selection menu
             if battle_left_right == 199: #in move selection
@@ -215,14 +215,16 @@ class PokemonBrock(PokemonEnvironment):
                     print("Button again ahs been pressed")
                     reward += 21
                 
-                if enemy_hp_diff == 0:
+                if enemy_hp_diff == 0 and (enemy_hp_diff != self.prev_enemy_hp):
                     reward += 20
+                    self.prev_enemy_hp = enemy_hp_diff
                     
-                elif enemy_hp_diff > 0:
+                elif enemy_hp_diff > 0 and (enemy_hp_diff != self.prev_enemy_hp):
                     #To incentise it to actually attack if hovering over one of the moves for too long
                     # if self.button_pressed == 4:
                     #     reward += 2
                     reward += 1.5 * (enemy_max_hp - enemy_curr_hp)
+                    self.prev_enemy_hp = enemy_hp_diff
                     
                 elif enemy_hp_diff < 0: #enemy recovered hp
                     reward = 0
@@ -320,7 +322,9 @@ class PokemonBrock(PokemonEnvironment):
             return 1
         elif self.no_move >= 250:
             return 1
-        elif self.no_attack >= 125:
+        elif self.no_attack >= 100:
+            return 1
+        elif self._read_hp(0xD015) == 0:
             return 1
         else:
             return 0
