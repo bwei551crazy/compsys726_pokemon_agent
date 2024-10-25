@@ -206,6 +206,7 @@ class PokemonBrock(PokemonEnvironment):
     
     def _in_battle_reward(self) -> float :
         reward = 0
+        enemy_hp_df = 0
         if self._read_m(0xD057) != 0:
             enemy_curr_hp = self._read_hp(0xCFE6) #self._read_m(0xCFE6) | self._read_m(0xCFE7)
             enemy_max_hp = self._read_hp(0xCFF4)  #self._read_m(0xCFF4) | self._read_m(0xCFF5)
