@@ -254,9 +254,9 @@ class PokemonBrock(PokemonEnvironment):
                 else:
                     self.no_attack += 1
 
-            if turn_num != self.prev_turn:
-                print("Move has been made Turn")
-                reward +=30 + 1.5*(enemy_hp_df)
+                if turn_num != self.prev_turn:
+                    print("Move has been made Turn")
+                    reward +=30 + 1.5*(enemy_hp_df)
             self.prev_turn = turn_num
 
         else:
@@ -283,6 +283,8 @@ class PokemonBrock(PokemonEnvironment):
         num_caught = np.array([game_stats["caught_pokemon"]])
         battle_left_right = np.array([self._read_m(0xCC29)]) #battle menu cursor on left or right
         battle_button = np.array([self._read_m(0xCC26)])
+        # xp = np.array([self._read_party_xp()])
+        # seen = np.array([])
 
         state = np.concatenate([x, y, 
                                 location,
