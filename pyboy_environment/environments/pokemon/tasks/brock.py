@@ -38,7 +38,7 @@ class PokemonBrock(PokemonEnvironment):
         ]
 
         super().__init__(
-            act_freq=act_freq,
+            act_freq= 100, #act_freq,
             task="brock",
             init_name="has_pokedex.state",
             emulation_speed=emulation_speed,
@@ -134,7 +134,6 @@ class PokemonBrock(PokemonEnvironment):
         if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]):
             #new coordinate unlocked
             if (new_state["location"]["x"], new_state["location"]["y"]) not in self.prev_spot:
-                reward += 1
                 self.prev_spot.add((new_state["location"]["x"], new_state["location"]["y"]))
                 if new_state["location"]["map"] == "PALLET_TOWN,":
                     reward += 2
@@ -243,7 +242,7 @@ class PokemonBrock(PokemonEnvironment):
                         
             elif battle_left_right == 199 and self.button_pressed == 4 :
                 print("entered move selection")
-                reward += 5
+                reward += 8
                 if battle_button == 0:
                     print("Tackle has been pressed")
                     enemy_hp_df = enemy_max_hp - enemy_curr_hp
@@ -258,7 +257,7 @@ class PokemonBrock(PokemonEnvironment):
 
                 if turn_num != self.prev_turn:
                     print("Move has been made Turn")
-                    reward +=50 + 1.5*(enemy_hp_df)
+                    reward +=30 + 1.5*(enemy_hp_df)
             self.prev_turn = turn_num
 
         else:
