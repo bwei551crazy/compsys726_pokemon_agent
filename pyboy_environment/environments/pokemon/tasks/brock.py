@@ -38,7 +38,7 @@ class PokemonBrock(PokemonEnvironment):
         ]
 
         super().__init__(
-            act_freq= 50, #act_freq, original is 24
+            act_freq= 30, #act_freq, original is 24
             task="brock",
             init_name="has_pokedex.state",
             emulation_speed=emulation_speed,
@@ -60,6 +60,7 @@ class PokemonBrock(PokemonEnvironment):
         self.button_pressed = 0
         self.prev_button_pressed = 0
         self.no_attack = 0
+        self.in_battle = False
 
     def reset(self) -> np.ndarray:
         self.steps = 0
@@ -82,6 +83,7 @@ class PokemonBrock(PokemonEnvironment):
         self.button_pressed = 0
         self.prev_button_pressed = 0
         self.no_attack = 0
+        self.in_battle = False
 
         return self._get_state()
 
@@ -128,7 +130,7 @@ class PokemonBrock(PokemonEnvironment):
 
     def _movement_reward(self, new_state: dict[str, any]) -> int:
         reward = 0
-        if self._read_m(0xD057):
+        if self.in_battle:
             return reward
 
         if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]):
@@ -176,7 +178,7 @@ class PokemonBrock(PokemonEnvironment):
     
     def _location_reward(self, new_state: dict[str, any]) -> float :
         reward = 0
-        if self._read_m(0xD057):
+        if self.in_battle:
             return reward
         #New area 
         if new_state["location"]["map"] not in self.prev_loc:
@@ -203,66 +205,75 @@ class PokemonBrock(PokemonEnvironment):
 
         return reward
     
-    def _in_battle_reward(self) -> float :
+    def _in_battle_reward(self, new_state) -> float :
         reward = 0
         enemy_hp_df = 0
-        if self._read_m(0xD057) != 0:
-            enemy_curr_hp = self._read_hp(0xCFE6) #self._read_m(0xCFE6) | self._read_m(0xCFE7)
-            enemy_max_hp = self._read_hp(0xCFF4)  #self._read_m(0xCFF4) | self._read_m(0xCFF5)
-            turn_num = self._read_m(0xCCD5) #turn number starts from 0
-            battle_hp = self._read_hp(0xD015)
-            battle_hp_max = self._read_hp(0xD023)
-            battle_left_right = self._read_m(0xCC29) #battle menu cursor on left or right
-            battle_button = self._read_m(0xCC26)
-            # Move selection: 199, Item selection: 7, Switch Pokemon selection: 3  
-            # FIGHT: CurrentMenu = 17, Selected item = 0
-            # ITEM: CurrentMenu = 17, Selected Item = 1
-            # POKEMON: CurrentMenu = 33, Selected Item = 0
-            # RUN    : Current menu = 33, Selected Item = 1
-            hp_list = self._read_party_hp()
-            party_hp = 0
-            for i in hp_list["current"]:
-                party_hp = party_hp + i
-
-            #Ensure that its either 33 or 17:
-            if battle_left_right in [17, 33] and self.button_pressed == 4:
-                print("In fight")
-                reward += 5
-                pokeball_count = self._get_pokeball_count(self._read_items())
-                if pokeball_count == 0:
-                    if battle_left_right == 17 and battle_button == 0:
-                        print("Fight button has been pressed")
-                        reward += 10
-                        self.no_attack += 1
-                        
-                else:
-                    if battle_left_right == 17 and battle_button == 1:
-                        print("Item has been pressed")
-                        reward += 15
-                        
-            elif battle_left_right == 199 and self.button_pressed == 4 :
-                print("entered move selection")
-                reward += 8
-                if battle_button == 0:
-                    print("Tackle has been pressed")
-                    enemy_hp_df = enemy_max_hp - enemy_curr_hp
-                    reward += 12
-                    # if (turn_num != self.prev_turn):
-                    #     reward += 1.5*(enemy_hp_df)
-                    self.no_attack = 0
-                elif battle_button == 1:
-                    reward += 10
-                else:
-                    self.no_attack += 1
-
-                if turn_num != self.prev_turn:
-                    print("Move has been made Turn")
-                    reward +=30 + 1.5*(enemy_hp_df)
-            self.prev_turn = turn_num
-
+        if self._read_m(0xD057) != 0 and self.in_battle == False:
+            self.in_battle = True
+            reward += 5
         else:
+            if self._read_m(0xD057) != 0:
+                enemy_curr_hp = self._read_hp(0xCFE6) #self._read_m(0xCFE6) | self._read_m(0xCFE7)
+                enemy_max_hp = self._read_hp(0xCFF4)  #self._read_m(0xCFF4) | self._read_m(0xCFF5)
+                turn_num = self._read_m(0xCCD5) #turn number starts from 0
+                battle_hp = self._read_hp(0xD015)
+                battle_hp_max = self._read_hp(0xD023)
+                battle_left_right = self._read_m(0xCC29) #battle menu cursor on left or right
+                battle_button = self._read_m(0xCC26)
+                # Move selection: 199, Item selection: 7, Switch Pokemon selection: 3  
+                # FIGHT: CurrentMenu = 17, Selected item = 0
+                # ITEM: CurrentMenu = 17, Selected Item = 1
+                # POKEMON: CurrentMenu = 33, Selected Item = 0
+                # RUN    : Current menu = 33, Selected Item = 1
+                hp_list = self._read_party_hp()
+                party_hp = 0
+                for i in hp_list["current"]:
+                    party_hp = party_hp + i
 
-            reward = 0       
+                #Ensure that its either 33 or 17:
+                if battle_left_right in [17, 33] and self.button_pressed == 4:
+                    print("In fight")
+                    reward += 5
+                    pokeball_count = self._get_pokeball_count(self._read_items())
+                    if pokeball_count == 0:
+                        if battle_left_right == 17 and battle_button == 0:
+                            print("Fight button has been pressed")
+                            reward += 10
+                            self.no_attack += 1
+                            
+                    else:
+                        if battle_left_right == 17 and battle_button == 1:
+                            print("Item has been pressed")
+                            reward += 15
+                            
+                elif battle_left_right == 199 and self.button_pressed == 4 :
+                    print("entered move selection")
+                    reward += 8
+                    if battle_button == 0:
+                        print("Tackle has been pressed")
+                        enemy_hp_df = enemy_max_hp - enemy_curr_hp
+                        reward += 12
+                        # if (turn_num != self.prev_turn):
+                        #     reward += 1.5*(enemy_hp_df)
+                        self.no_attack = 0
+                    elif battle_button == 1:
+                        reward += 10
+                    else:
+                        self.no_attack += 1
+                    
+                    if self._xp_reward(new_state) > 0:
+                        reward += 0.5 * self._xp_reward(new_state)
+
+                    if turn_num != self.prev_turn:
+                        print("Move has been made Turn")
+                        reward +=30 + 1.5*(enemy_hp_df)
+                    
+                self.prev_turn = turn_num  
+            elif self._read_m(0xD057) == 0 and self.in_battle == True:
+                self.in_battle = False
+                self.prev_turn = -1
+                self.no_attack = 0
+
 
         return reward
 
@@ -304,7 +315,7 @@ class PokemonBrock(PokemonEnvironment):
         location_reward = self._location_reward(new_state)
         movement_reward = self._movement_reward(new_state)
         seen_reward = self._seen_reward(new_state)
-        battle_reward = self._in_battle_reward()
+        battle_reward = self._in_battle_reward(new_state)
         xp_reward = self._xp_reward(new_state)
         #print(f"Location: {location_reward}, Movement: {movement_reward}, Seen: {seen_reward}, battle: {battle_reward}, xp: {xp_reward}")
 
@@ -316,7 +327,7 @@ class PokemonBrock(PokemonEnvironment):
                         + seen_reward #*0.4
                         + caught_reward #*0.75
                         + battle_reward #* 0.9  
-                        + xp_reward * 1.5 )#*0.5)
+                        + xp_reward * 0 )#*0.5)
 
         return total_reward
 
