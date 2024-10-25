@@ -124,8 +124,9 @@ class PokemonBrock(PokemonEnvironment):
                 if new_state["location"]["map"] == "OAKS_LAB,":
                     reward -= 1
 
-            if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
-                reward += 1
+            # if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
+            #     reward += 1.5
+            # else:
             reward += 1
             #print("Has moved reward")
 
@@ -195,8 +196,8 @@ class PokemonBrock(PokemonEnvironment):
             for i in hp_list["current"]:
                 party_hp = party_hp + i
 
-            #Select 4 is ideal
-            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199]:
+            #Select 4 is ideal if FIGHT, POKEMON, ITEM and RUN are not selected. And the prev menu wasn't in battle. 
+            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199] and self.prev_menu != 17:
                 print(f"Battle_left_right: {battle_left_right}")
                 print("Button ahs been pressed")
                 reward += 5
@@ -214,6 +215,7 @@ class PokemonBrock(PokemonEnvironment):
                 #Will either be here or at line 217
                 if self.button_pressed == 4 and (self.prev_menu == 199 or self.prev_menu == 17):
                     print("Button again ahs been pressed")
+                    print(f"Battle_left_right: {battle_left_right}")
                     reward += 21
                 
                 if enemy_hp_diff == 0 and (enemy_hp_diff != self.prev_enemy_hp):
