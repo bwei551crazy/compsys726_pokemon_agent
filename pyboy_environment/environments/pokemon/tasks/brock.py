@@ -132,7 +132,11 @@ class PokemonBrock(PokemonEnvironment):
 
         if (new_state["location"] == self.prior_game_stats["location"] and self._read_m(0xD057) == 0):
             self.no_move += 1
-            reward -= 1
+            if new_state["location"]["map"] == "ROUTE_1,":
+                reward -= 1.5
+            else:
+                reward -= 1
+
 
         # if new_state["location"]["map"] == "PALLET_TOWN," and ("ROUTE_1" not in self.prev_loc):
         #     if (new_state["location"]["y"]) < (self.prior_game_stats["location"]["y"]): #to attempt to go up
@@ -197,7 +201,7 @@ class PokemonBrock(PokemonEnvironment):
                 party_hp = party_hp + i
 
             #Select 4 is ideal if FIGHT, POKEMON, ITEM and RUN are not selected. And the prev menu wasn't in battle. 
-            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199] and self.prev_menu != 17:
+            if self.button_pressed == 4 and battle_left_right not in [3, 7, 199] and self.prev_menu not in [17,33]:
                 print(f"Battle_left_right: {battle_left_right}")
                 print("Button ahs been pressed")
                 reward += 5
@@ -213,16 +217,22 @@ class PokemonBrock(PokemonEnvironment):
                 reward += 2
                 enemy_hp_diff = enemy_max_hp - enemy_curr_hp 
                 #Will either be here or at line 217
-                if self.button_pressed == 4 and (self.prev_menu == 199 or self.prev_menu == 17):
+                if self.button_pressed == 4 and (self.prev_menu in [17, 199, 33]) and self.prev_button_pressed == 4:
                     print("Button again ahs been pressed")
                     print(f"Battle_left_right: {battle_left_right}")
-                    reward += 21
+                    self.no_attack = 0
+                    self.prev_button_pressed = self.button_pressed
+                    reward += 15
                 
                 if enemy_hp_diff == 0 and (enemy_hp_diff != self.prev_enemy_hp):
+                    #Should be -1 b4 the switch
+                    print(f"Full HP prev update: {self.prev_enemy_hp}")
                     reward += 20
                     self.prev_enemy_hp = enemy_hp_diff
                     
                 elif enemy_hp_diff > 0 and (enemy_hp_diff != self.prev_enemy_hp):
+                    #Prev hp diff should be 0 at this point if coming from the condition above and it actually dealt damage
+                    print(f"Full HP prev update: {self.prev_enemy_hp}")
                     #To incentise it to actually attack if hovering over one of the moves for too long
                     # if self.button_pressed == 4:
                     #     reward += 2
@@ -234,7 +244,7 @@ class PokemonBrock(PokemonEnvironment):
                     
                 else:
                     self.no_attack += 1
-                    reward = -1
+                    reward = 0
                 
             
             #Pokemon selection
