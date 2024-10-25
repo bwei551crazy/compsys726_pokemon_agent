@@ -224,9 +224,9 @@ class PokemonBrock(PokemonEnvironment):
                 party_hp = party_hp + i
 
             #Ensure that its either 33 or 17:
-            if battle_left_right in [17, 33]:
+            if battle_left_right in [17, 33] and self.button_pressed == 4:
                 print("In fight")
-                reward += 10
+                reward += 5
                 pokeball_count = self._get_pokeball_count(self._read_items())
                 if pokeball_count == 0:
                     if battle_left_right == 17 and battle_button == 0:
@@ -239,9 +239,9 @@ class PokemonBrock(PokemonEnvironment):
                         print("Item has been pressed")
                         reward += 15
                         
-            elif battle_left_right == 199:
+            elif battle_left_right == 199 and self.button_pressed == 4:
                 print("entered move selection")
-                reward += 20
+                reward += 8
                 if battle_button == 0:
                     print("Tackle has been pressed")
                     enemy_hp_df = enemy_max_hp - enemy_curr_hp
