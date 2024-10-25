@@ -183,11 +183,11 @@ class PokemonBrock(PokemonEnvironment):
             self.prev_loc.add(new_state["location"]["map"])
             reward = 50
             if new_state["location"]["map"] == "PALLET_TOWN,":
-                reward += 2
-            elif new_state["location"]["map"] == "ROUTE_1,":
-                reward += 3
-            elif new_state["location"]["map"] == "VIRIDEAN_CITY,":
                 reward += 4
+            elif new_state["location"]["map"] == "ROUTE_1,":
+                reward += 5
+            elif new_state["location"]["map"] == "VIRIDEAN_CITY,":
+                reward += 6
             elif new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
                 reward -= 1
            #print("Newly visited location")
@@ -232,25 +232,29 @@ class PokemonBrock(PokemonEnvironment):
                     if battle_left_right == 17 and battle_button == 0:
                         print("Fight button has been pressed")
                         reward += 10
-                        self.no_attack = 0
+                        self.no_attack += 1
+                        
                 else:
                     if battle_left_right == 17 and battle_button == 1:
                         print("Item has been pressed")
                         reward += 15
-                        self.no_attack = 0
+                        
             elif battle_left_right == 199:
                 print("entered move selection")
                 reward += 20
                 if battle_button == 0:
                     print("Tackle has been pressed")
                     enemy_hp_df = enemy_max_hp - enemy_curr_hp
-                    reward += 1 + 1.5*(enemy_hp_df)
+                    reward += 10 + 1.5*(enemy_hp_df)
                     self.no_attack = 0
-            
-            if turn_num == self.prev_turn:
-                print("Same Turn")
-                reward -= 1
-                self.no_attack+=1
+                elif battle_button == 1:
+                    reward += 5
+                else:
+                    self.no_attack += 1
+
+            if turn_num != self.prev_turn:
+                print("Move has been made Turn")
+                reward +=10
             self.prev_turn = turn_num
 
         else:
