@@ -124,10 +124,10 @@ class PokemonBrock(PokemonEnvironment):
                 if new_state["location"]["map"] == "OAKS_LAB,":
                     reward -= 1
 
-            # if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
-            #     reward += 1.5
-            # else:
-            reward += 1
+            if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
+                reward += 1.5
+            else:
+                reward += 1
             #print("Has moved reward")
 
         if (new_state["location"] == self.prior_game_stats["location"] and self._read_m(0xD057) == 0):
@@ -234,7 +234,7 @@ class PokemonBrock(PokemonEnvironment):
                     
                 else:
                     self.no_attack += 1
-                    reward = 0
+                    reward = -1
                 
             
             #Pokemon selection
