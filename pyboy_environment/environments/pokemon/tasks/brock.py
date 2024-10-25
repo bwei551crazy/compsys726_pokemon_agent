@@ -266,7 +266,7 @@ class PokemonBrock(PokemonEnvironment):
 
                     if turn_num != self.prev_turn:
                         print("Move has been made Turn")
-                        reward +=30 + 1.5*(enemy_hp_df)
+                        reward +=500 + 1.5*(enemy_hp_df)
                     
                 self.prev_turn = turn_num  
             elif self._read_m(0xD057) == 0 and self.in_battle == True:
