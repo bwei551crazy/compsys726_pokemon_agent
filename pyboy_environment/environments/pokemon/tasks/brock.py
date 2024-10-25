@@ -134,6 +134,7 @@ class PokemonBrock(PokemonEnvironment):
         if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]):
             #new coordinate unlocked
             if (new_state["location"]["x"], new_state["location"]["y"]) not in self.prev_spot:
+                reward += 1
                 self.prev_spot.add((new_state["location"]["x"], new_state["location"]["y"]))
                 if new_state["location"]["map"] == "PALLET_TOWN,":
                     reward += 2
@@ -256,7 +257,7 @@ class PokemonBrock(PokemonEnvironment):
 
                 if turn_num != self.prev_turn:
                     print("Move has been made Turn")
-                    reward +=30 + 1.5*(enemy_hp_df)
+                    reward +=50 + 1.5*(enemy_hp_df)
             self.prev_turn = turn_num
 
         else:
@@ -283,8 +284,8 @@ class PokemonBrock(PokemonEnvironment):
         num_caught = np.array([game_stats["caught_pokemon"]])
         battle_left_right = np.array([self._read_m(0xCC29)]) #battle menu cursor on left or right
         battle_button = np.array([self._read_m(0xCC26)])
-        # xp = np.array([self._read_party_xp()])
-        # seen = np.array([])
+        xp = np.array([self._read_party_xp()])
+        seen = np.array([self._read_seen_pokemon_count()])
 
         state = np.concatenate([x, y, 
                                 location,
@@ -292,7 +293,8 @@ class PokemonBrock(PokemonEnvironment):
                                 enemy_curr_hp,
                                 num_caught,
                                 battle_button,
-                                battle_left_right]).flatten()
+                                battle_left_right,
+                                seen]).flatten()
    
         return state#, np.array(self.pyboy.game_area())]#state  #[game_stats["location"]["map_id"], game_stats["seen_pokemon"], game_stats["caught_pokemon"]]
 
@@ -314,7 +316,7 @@ class PokemonBrock(PokemonEnvironment):
                         + seen_reward #*0.4
                         + caught_reward #*0.75
                         + battle_reward #* 0.9  
-                        + xp_reward )#*0.5)
+                        + xp_reward * 1.5 )#*0.5)
 
         return total_reward
 
