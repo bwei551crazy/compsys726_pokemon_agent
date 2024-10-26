@@ -61,6 +61,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_button_pressed = 0
         self.no_attack = 0
         self.in_battle = False
+        self.battle_win = 0
 
     def reset(self) -> np.ndarray:
         self.steps = 0
@@ -84,6 +85,7 @@ class PokemonBrock(PokemonEnvironment):
         self.prev_button_pressed = 0
         self.no_attack = 0
         self.in_battle = False
+        self.battle_win = 0
 
         return self._get_state()
 
@@ -182,7 +184,7 @@ class PokemonBrock(PokemonEnvironment):
         #New area 
         if new_state["location"]["map"] not in self.prev_loc:
             self.prev_loc.add(new_state["location"]["map"])
-            reward += 50
+            reward += 20
             if new_state["location"]["map"] == "PALLET_TOWN,":
                 reward += 4
             elif new_state["location"]["map"] == "ROUTE_1,":
@@ -190,7 +192,7 @@ class PokemonBrock(PokemonEnvironment):
             elif new_state["location"]["map"] == "VIRIDEAN_CITY,":
                 reward += 6
             elif new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
-                reward -= 1
+                reward -= 20
            #print("Newly visited location")
         # elif new_state["location"]["map"] in self.prev_loc:
         #     reward = 10
@@ -230,43 +232,59 @@ class PokemonBrock(PokemonEnvironment):
                 for i in hp_list["current"]:
                     party_hp = party_hp + i
 
+                if battle_hp < battle_hp_max:
+                    reward -= 1
+
+
                 #Ensure that its either 33 or 17:
                 if battle_left_right in [17, 33] and self.button_pressed == 4:
                     print("In fight")
-                    reward += 5
+                    reward += 2
                     pokeball_count = self._get_pokeball_count(self._read_items())
                     if pokeball_count == 0:
                         if battle_left_right == 17 and battle_button == 0:
                             print("Fight button has been pressed")
-                            reward += 10
+                            reward += 2
                             self.no_attack += 1
-                            
                     else:
+                        #Impossible to reach here unless pokeball is available
                         if battle_left_right == 17 and battle_button == 1:
                             print("Item has been pressed")
-                            reward += 15
+                            reward += 3
                             
                 elif battle_left_right == 199 and self.button_pressed == 4 :
                     print("entered move selection")
-                    reward += 8
+                    reward += 3
                     if battle_button == 0:
-                        print("Tackle has been pressed")
+                        print("Tackle selected")
                         enemy_hp_df = enemy_max_hp - enemy_curr_hp
-                        reward += 12
-                        # if (turn_num != self.prev_turn):
-                        #     reward += 1.5*(enemy_hp_df)
+                        reward += 3
+                        if (turn_num != self.prev_turn):
+                            print("action made")
+                            reward += 5
+                        else:
+                            reward -= 3
                         self.no_attack +=1
                     elif battle_button == 1:
-                        reward += 10
+                        print("Tail whip selected")
+                        reward += 2
+                        if (turn_num != self.prev_turn):
+                            print("action made")
+                            reward += 5
+                        else:
+                            reward -= 2
                     else:
+                        print("no button has been pressed")
                         self.no_attack += 1
+                        reward -= 3
                     
                     if self._xp_reward(new_state) > 0:
                         reward += 0.5 * self._xp_reward(new_state)
+                        self.battle_win +=1
 
                     if turn_num != self.prev_turn:
-                        print("Move has been made Turn")
-                        reward +=500 + 1.5*(enemy_hp_df)
+                        print("action made reward applied")
+                        reward += 30 + 1.5*(enemy_hp_df)
                         self.no_attack = 0
                     
                 self.prev_turn = turn_num  
@@ -276,7 +294,7 @@ class PokemonBrock(PokemonEnvironment):
                 self.no_attack = 0
 
 
-        return reward
+        return reward + self.battle_win*2
 
 
     def _get_state(self) -> np.ndarray:
@@ -348,6 +366,7 @@ class PokemonBrock(PokemonEnvironment):
             return 1
         else:
             return 0
+        
         
         # Maybe if we run out of pokeballs...? or a max step count
         #return self.steps >= 1000
