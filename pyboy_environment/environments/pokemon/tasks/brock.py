@@ -240,12 +240,17 @@ class PokemonBrock(PokemonEnvironment):
                 if battle_left_right in [17, 33] and self.button_pressed == 4:
                     print("In fight")
                     reward += 2
+                    if self.no_attack > 50:
+                        reward -= 2
                     pokeball_count = self._get_pokeball_count(self._read_items())
                     if pokeball_count == 0:
                         if battle_left_right == 17 and battle_button == 0:
                             print("Fight button has been pressed")
                             reward += 2
                             self.no_attack += 1
+                            if self.no_attack > 50:
+                                reward -= 2
+
                     else:
                         #Impossible to reach here unless pokeball is available
                         if battle_left_right == 17 and battle_button == 1:
@@ -255,6 +260,8 @@ class PokemonBrock(PokemonEnvironment):
                 elif battle_left_right == 199 and self.button_pressed == 4 :
                     print("entered move selection")
                     reward += 3
+                    if self.no_attack > 50:
+                        reward -= 3
                     if battle_button == 0:
                         print("Tackle selected")
                         enemy_hp_df = enemy_max_hp - enemy_curr_hp
@@ -264,7 +271,8 @@ class PokemonBrock(PokemonEnvironment):
                             reward += 5
                         else:
                             reward -= 3
-                        self.no_attack +=1
+                            self.no_attack += 1
+                        
                     elif battle_button == 1:
                         print("Tail whip selected")
                         reward += 2
@@ -273,10 +281,10 @@ class PokemonBrock(PokemonEnvironment):
                             reward += 5
                         else:
                             reward -= 2
+                            self.no_attack += 1
                     else:
                         print("no button has been pressed")
                         self.no_attack += 1
-                        reward -= 3
                     
                     if self._xp_reward(new_state) > 0:
                         reward += 0.5 * self._xp_reward(new_state)
