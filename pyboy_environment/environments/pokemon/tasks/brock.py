@@ -209,6 +209,7 @@ class PokemonBrock(PokemonEnvironment):
         reward = 0
         enemy_hp_df = 0
         if self._read_m(0xD057) != 0 and self.in_battle == False:
+            print("Triggered")
             self.in_battle = True
             reward += 5
         else:
@@ -255,7 +256,7 @@ class PokemonBrock(PokemonEnvironment):
                         reward += 12
                         # if (turn_num != self.prev_turn):
                         #     reward += 1.5*(enemy_hp_df)
-                        self.no_attack = 0
+                        self.no_attack +=1
                     elif battle_button == 1:
                         reward += 10
                     else:
@@ -267,6 +268,7 @@ class PokemonBrock(PokemonEnvironment):
                     if turn_num != self.prev_turn:
                         print("Move has been made Turn")
                         reward +=500 + 1.5*(enemy_hp_df)
+                        self.no_attack = 0
                     
                 self.prev_turn = turn_num  
             elif self._read_m(0xD057) == 0 and self.in_battle == True:
