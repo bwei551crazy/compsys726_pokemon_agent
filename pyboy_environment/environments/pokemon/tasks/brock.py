@@ -133,9 +133,13 @@ class PokemonBrock(PokemonEnvironment):
         if self.in_battle:
             return reward
 
-        if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]):
+        if (new_state["location"]["x"], new_state["location"]["y"]) != (self.prior_game_stats["location"]["x"], self.prior_game_stats["location"]["y"]) and self._read_m(0xD057) == 0:
             #new coordinate unlocked
             if (new_state["location"]["x"], new_state["location"]["y"]) not in self.prev_spot:
+                # if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
+                #     reward += 1.5
+                # else:
+                reward += 1
                 self.prev_spot.add((new_state["location"]["x"], new_state["location"]["y"]))
                 if new_state["location"]["map"] == "PALLET_TOWN,":
                     reward += 2
@@ -146,16 +150,11 @@ class PokemonBrock(PokemonEnvironment):
                 elif new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
                     reward -= 1
             else:
-                if new_state["location"]["map"] == "OAKS_LAB,":
+                if new_state["location"]["map"] == "OAKS_LAB," or new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
                     reward -= 1
-
-            if self._grass_reward(new_state) and not (self.prior_game_stats["location"]["map"] == 'ROUTE_1,' and new_state["location"]["map"] == "PALLET_TOWN,") :
-                reward += 1.5
-            else:
-                reward += 1
             #print("Has moved reward")
 
-        if (new_state["location"] == self.prior_game_stats["location"] and self._read_m(0xD057) == 0):
+        elif (new_state["location"] == self.prior_game_stats["location"] and self._read_m(0xD057) == 0):
             self.no_move += 1
             if new_state["location"]["map"] == "ROUTE_1,":
                 reward -= 1.5
@@ -183,7 +182,7 @@ class PokemonBrock(PokemonEnvironment):
         #New area 
         if new_state["location"]["map"] not in self.prev_loc:
             self.prev_loc.add(new_state["location"]["map"])
-            reward = 50
+            reward += 50
             if new_state["location"]["map"] == "PALLET_TOWN,":
                 reward += 4
             elif new_state["location"]["map"] == "ROUTE_1,":
@@ -200,8 +199,8 @@ class PokemonBrock(PokemonEnvironment):
         # if new_state["location"]["map"] == "OAKS_LAB,":
         #     reward -= 5
 
-        if new_state["location"]["map"] == "OAKS_LAB," or new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
-            reward -= 1
+        # if new_state["location"]["map"] == "OAKS_LAB," or new_state["location"]["map"] == "REDS_HOUSE_1F" or new_state["location"]["map"] == "REDS_HOUSE_2F" or new_state["location"]["map"] == "BLUES_HOUSE":
+        #     reward -= 1
 
         return reward
     
