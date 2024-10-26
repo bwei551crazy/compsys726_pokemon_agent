@@ -240,7 +240,7 @@ class PokemonBrock(PokemonEnvironment):
                 if battle_left_right in [17, 33] and self.button_pressed == 4:
                     print("In fight")
                     reward += 2
-                    if self.no_attack > 50:
+                    if self.no_attack > 25:
                         reward -= 2
                     pokeball_count = self._get_pokeball_count(self._read_items())
                     if pokeball_count == 0:
@@ -248,7 +248,7 @@ class PokemonBrock(PokemonEnvironment):
                             print("Fight button has been pressed")
                             reward += 2
                             self.no_attack += 1
-                            if self.no_attack > 50:
+                            if self.no_attack > 25:
                                 reward -= 2
 
                     else:
@@ -260,7 +260,7 @@ class PokemonBrock(PokemonEnvironment):
                 elif battle_left_right == 199 and self.button_pressed == 4 :
                     print("entered move selection")
                     reward += 3
-                    if self.no_attack > 50:
+                    if self.no_attack > 25:
                         reward -= 3
                     if battle_button == 0:
                         print("Tackle selected")
@@ -292,7 +292,11 @@ class PokemonBrock(PokemonEnvironment):
 
                     if turn_num != self.prev_turn:
                         print("action made reward applied")
-                        reward += 30 + 1.5*(enemy_hp_df)
+                        if self.battle_win > 2:
+                            print("Has won 2")
+                            reward += 1.5 + 1.5*(enemy_hp_df)
+                        else:
+                            reward += 30 + 1.5*(enemy_hp_df)
                         self.no_attack = 0
                     
                 self.prev_turn = turn_num  
