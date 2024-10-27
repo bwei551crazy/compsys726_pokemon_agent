@@ -62,6 +62,7 @@ class PokemonBrock(PokemonEnvironment):
         self.no_attack = 0
         self.in_battle = False
         self.battle_win = 0
+        self.ran_away = 0
 
     def reset(self) -> np.ndarray:
         self.steps = 0
@@ -86,6 +87,7 @@ class PokemonBrock(PokemonEnvironment):
         self.no_attack = 0
         self.in_battle = False
         self.battle_win = 0
+        self.ran_away = 0
 
         return self._get_state()
 
@@ -301,6 +303,10 @@ class PokemonBrock(PokemonEnvironment):
                     
                 self.prev_turn = turn_num  
             elif self._read_m(0xD057) == 0 and self.in_battle == True:
+                if self.battle_win == 0:
+                    print("ran away in shame")
+                    reward -= 50
+                    self.ran_away = 1
                 self.in_battle = False
                 self.prev_turn = -1
                 self.no_attack = 0
@@ -375,6 +381,8 @@ class PokemonBrock(PokemonEnvironment):
         elif self.no_attack >= 150:
             return 1
         elif self._read_hp(0xD015) == 0:
+            return 1
+        elif self.ran_away == 1:
             return 1
         else:
             return 0
